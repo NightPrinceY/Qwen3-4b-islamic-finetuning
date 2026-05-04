@@ -1,0 +1,10 @@
+.env
+__pycache__/
+*.pyc
+outputs/checkpoints/
+outputs/merged/
+outputs/quantized/
+data/raw/
+*.log
+.ipynb_checkpoints/
+wandb/
