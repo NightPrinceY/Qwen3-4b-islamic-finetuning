@@ -41,6 +41,14 @@ def flatten(rows: list[dict]) -> dict:
     }
 
 
+FEATURES = Features({
+    "messages": [{"role": Value("string"), "content": Value("string")}],
+    "system":   Value("string"),
+    "question": Value("string"),
+    "answer":   Value("string"),
+})
+
+
 def main():
     print("Loading splits ...")
     splits = {
@@ -51,7 +59,7 @@ def main():
 
     print("Converting to HF datasets ...")
     dataset_dict = DatasetDict({
-        name: Dataset.from_dict(flatten(rows))
+        name: Dataset.from_dict(flatten(rows), features=FEATURES)
         for name, rows in splits.items()
     })
 
