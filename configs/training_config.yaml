@@ -1,20 +1,29 @@
+# Training configuration for Qwen3-4B QLoRA Islamic Arabic fine-tuning
+# Smoke-test verified on RTX 2080 Ti (CC 7.5)
+
+model_name: Qwen/Qwen3-4B
+
 output_dir: outputs/checkpoints
 num_train_epochs: 3
-per_device_train_batch_size: 2
-per_device_eval_batch_size: 2
-gradient_accumulation_steps: 8
+per_device_train_batch_size: 1
+per_device_eval_batch_size: 1
+gradient_accumulation_steps: 16    # effective batch = 1 * 4 GPUs * 16 = 64
 eval_strategy: steps
-eval_steps: 100
+eval_steps: 200
 save_strategy: steps
-save_steps: 100
+save_steps: 200
 save_total_limit: 3
-learning_rate: 2e-4
+learning_rate: 0.0002
 lr_scheduler_type: cosine
 warmup_ratio: 0.05
-max_seq_length: 2048
-bf16: false
-fp16: true
+max_length: 1024
 logging_steps: 10
-load_best_model_at_end: true
-report_to: wandb
+load_best_model_at_end: false
+report_to: none                    # set to wandb when WANDB_API_KEY is configured
 run_name: qwen3-4b-islamic-arabic
+
+# ── Precision (CC 7.5 constraints) ──────────────────────────────
+# fp16/bf16 are set to False in train.py — do NOT change here.
+# Qwen3's internal autocast emits BF16 activations that crash the
+# FP16 grad scaler on CC 7.5. QLoRA via bitsandbytes handles
+# precision internally without needing an external AMP scaler.

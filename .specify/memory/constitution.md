@@ -1,50 +1,55 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# Qwen3-4B Islamic Fine-Tuning Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Data Quality First
+Every training sample must be accurate Islamic scholarship — sourced from Quran, authenticated Hadith, or verified classical scholarship. No hallucinated references, no unverified fatawa. Quality over quantity at every stage.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Reproducibility
+Every experiment must be reproducible. All hyperparameters live in `configs/`. No magic numbers in scripts. Anyone cloning the repo can reproduce the exact training run.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Incremental Validation
+Validate at every stage before moving to the next: check dataset format before training, check loss curves before merging, check merged model before quantizing. Never skip gates.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. Hardware-Aware Design
+All code must account for RTX 2080 Ti (CC 7.5) constraints: FP16 only, no bf16, no Flash Attention 2, no awq_marlin. Use DeepSpeed ZeRO-2. Always set `CUDA_VISIBLE_DEVICES=1,2,3,4` — GPU0 is often occupied.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Publish Everything
+Model, dataset, and training code all go public. Write proper HuggingFace model cards and dataset cards. Goal is community impact, not just a private experiment.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+## Pipeline Order (NON-NEGOTIABLE)
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+1. `scripts/prepare_data.py` → `data/splits/`
+2. `scripts/train.py` → `outputs/checkpoints/`
+3. `scripts/merge_lora.py` → `outputs/merged/`
+4. `scripts/quantize.py` → `outputs/quantized/`
+5. `scripts/evaluate.py` → documented results
+6. Publish dataset → `NightPrince/islamic-arabic-qa`
+7. Publish model → `NightPrince/Qwen3-4B-Islamic-Arabic`
+8. Publish code → `NightPrinceY/Qwen3-4b-islamic-finetuning`
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+## Quality Gates
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+- **Before training**: ≥500 samples, all valid JSONL, consistent system prompt
+- **During training**: loss decreasing by epoch 1 — if not, fix data first
+- **Before merge**: pick best checkpoint by eval loss, not last
+- **Before quantize**: merged model must generate coherent Arabic text
+- **Before publish**: evaluate.py shows measurable improvement on ≥10 test samples
+
+## Technical Constraints
+
+| Constraint | Value | Reason |
+|---|---|---|
+| GPU | 4x RTX 2080 Ti, CUDA_VISIBLE_DEVICES=1,2,3,4 | GPU0 occupied |
+| Precision | FP16 | bf16 emulated on CC 7.5 |
+| Quantization | AWQ plain | awq_marlin needs CC 8.0+ |
+| Attention | FlashInfer | Flash Attention 2 needs CC 8.0+ |
+| DeepSpeed | ZeRO-2 | optimal for this hardware |
+| Base model | Qwen/Qwen3-4B | fast iteration before 8B |
+| LoRA | r=64, alpha=128, all projection layers | |
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This constitution supersedes any shortcut. If a gate fails, fix the upstream step — never skip forward.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2026-05-04 | **Author**: Yahya Alnwsany
