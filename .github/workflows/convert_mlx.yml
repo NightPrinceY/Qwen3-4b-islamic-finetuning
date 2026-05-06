@@ -1,0 +1,46 @@
+name: Convert to MLX (macOS)
+
+on:
+  workflow_dispatch:    # trigger manually from GitHub Actions tab
+
+jobs:
+  convert:
+    runs-on: macos-latest   # Apple Silicon M-series runner
+
+    steps:
+      - name: Install mlx-lm and HF hub
+        run: pip install mlx-lm huggingface-hub
+
+      - name: Convert merged model → MLX 4-bit
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python -m mlx_lm.convert \
+            --hf-path NightPrince/Qwen3-4B-Islamic-Arabic \
+            --mlx-path mlx_output \
+            --quantize \
+            --q-bits 4
+
+      - name: Push to HuggingFace
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python - << 'EOF'
+          import os
+          from huggingface_hub import HfApi
+
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          api.create_repo(
+              "NightPrince/Qwen3-4B-Islamic-Arabic-MLX",
+              repo_type="model",
+              exist_ok=True,
+              private=False,
+          )
+          api.upload_folder(
+              folder_path="mlx_output",
+              repo_id="NightPrince/Qwen3-4B-Islamic-Arabic-MLX",
+              repo_type="model",
+              commit_message="Add MLX 4-bit quantized model (converted via GitHub Actions)",
+          )
+          print("Pushed to NightPrince/Qwen3-4B-Islamic-Arabic-MLX")
+          EOF
